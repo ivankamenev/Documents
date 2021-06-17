@@ -10,27 +10,33 @@ import Photos
 
 class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
+    private let userDefaults = UserDefaults.standard
     private let tableView = UITableView(frame: .zero, style: .plain)
-    private var images = [URL]()
     private let imagePicker = UIImagePickerController()
+    private var images = [URL]()
+    
+    override func viewDidAppear(_ animated: Bool) {
+        getFiles()
+        tableView.reloadData()
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
         imagePicker.delegate = self
-        getFiles()
         setupViews()
         setupTableView()
     }
     
     @IBAction func addButtonPresse(_ sender: Any) {
+        imagePicker.allowsEditing = false
+        imagePicker.sourceType = .photoLibrary
+                
         present(imagePicker, animated: true, completion: nil)
     }
     
+    
     private func setupViews() {
-        imagePicker.allowsEditing = false
-        imagePicker.sourceType = .photoLibrary
-        
         view.addSubview(tableView)
         
         let constraints = [
@@ -53,7 +59,8 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         )
     }
     
-// MARK: - UIImagePickerControllerDelegate Method
+// MARK: - UIImagePickerControllerDelegate Methods
+        
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         let imageURL = info[.imageURL] as! URL
         print(imageURL)
@@ -72,7 +79,6 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         dismiss(animated: true, completion: nil)
     }
     
-// MARK: - Working with files Method
     func getFiles() {
         images.removeAll()
         let documentsUrl = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask,   appropriateFor: nil, create: false)
@@ -81,6 +87,16 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         
         for file in contents {
             images.append(file)
+        }
+        
+        if userDefaults.bool(forKey: "abc") {
+            images.sort {
+                $0.lastPathComponent > $1.lastPathComponent
+            }
+        } else {
+            images.sort {
+                $0.lastPathComponent < $1.lastPathComponent
+            }
         }
     }
 }
@@ -100,5 +116,17 @@ extension ViewController: UITableViewDataSource {
         return cell
     }
     
+}
+
+extension UIViewController {
+
+    var isModal: Bool {
+
+        let presentingIsModal = presentingViewController != nil
+        let presentingIsNavigation = navigationController?.presentingViewController?.presentedViewController == navigationController
+        let presentingIsTabBar = tabBarController?.presentingViewController is UITabBarController
+
+        return presentingIsModal || presentingIsNavigation || presentingIsTabBar
+    }
 }
 
